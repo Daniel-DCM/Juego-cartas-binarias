@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Cartas Binarias</title>
+    <style>
+        /* Estilos básicos */
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #faebd7; /* Fondo color crema */
+            text-align: center;
+            position: relative; /* Para posicionar los logos */
+        }
+        #welcome, #instructions, #question, #result {
+            max-width: 600px;
+            margin: auto;
+            text-align: justify; /* Justificación del texto */
+        }
+        #welcome h1, #instructions h2 {
+            margin: 20px;
+            text-align: center; /* Centrar títulos */
+        }
+        #welcome p, #result p {
+            margin: 10px;
+        }
+        #yesButton, #noButton, #resetButton, #startButton, #continueButton {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .card {
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            font-size: 20px;
+        }
+        table { margin: 0 auto; border-collapse: collapse; }
+
+        /* Colores para cada carta */
+        .table-0 { background-color: lightblue; }
+        .table-1 { background-color: lightyellow; }
+        .table-2 { background-color: lightcoral; }
+        .table-3 { background-color: orange; }
+        .table-4 { background-color: pink; }
+
+        /* Estilos para los logos */
+        .logo {
+            width: 100px; /* Tamaño del logo izquierdo */
+            position: absolute;
+            top: 20px; /* Distancia desde el top */
+        }
+        #logo-left {
+            left: 20px; /* Alineado a la izquierda */
+        }
+        #logo-right {
+            width: 150px; /* Tamaño del logo derecho */
+            right: 20px; /* Alineado a la derecha */
+        }
+
+        /* Estilo para el resultado */
+        #result {
+            margin-top: 20px; 
+            font-size: 24px; 
+            text-align: center; /* Centrar el texto del resultado */
+        }
+
+        /* Centrar el botón de reinicio */
+        #resetButton {
+            display: none; /* Inicialmente oculto */
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto; /* Centramos el botón */
+            display: block; /* Cambiar a block para que el margen funcione */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Logos de los autores -->
+    <img id="logo-left" class="logo" src="logo_graciela.png" alt="Logo Graciela">
+    <img id="logo-right" class="logo" src="logo_daniel.png" alt="Logo Daniel">
+
+    <!-- Sección de bienvenida, autores e instrucciones -->
+    <div id="welcome">
+        <h1>Juego de Cartas Binarias</h1>
+        <p><strong>Bienvenidos al Juego de Cartas Binarias</strong></p>
+        <p>En este juego, basado en el sistema binario, podrás realizar un truco para adivinar un número que elijas sin necesidad de decirlo en voz alta. Es una excelente forma de sorprender a amigos o simplemente divertirte con los números.</p>
+        
+        <p><strong>Autores:</strong></p>
+        <p>Graciela de León Sotelo <sup>1</sup>, Daniel Caballero Morales <sup>2</sup></p>
+        <p><sup>1</sup> Facultad de Ingeniería, <sup>2</sup> Facultad de Matemáticas</p>
+
+        <button id="startButton">Comenzar Juego</button>
+    </div>
+
+    <!-- Zona para mostrar instrucciones -->
+    <div id="instructions" style="display:none;">
+        <h2>Instrucciones</h2>
+        <p>1. Piensa en un número entre 1 y 31 y no lo olvides.</p>
+        <p>2. Te mostraré una serie de cartas y deberás responder "Sí" o "No" si tu número está en cada carta.</p>
+        <p>3. Con tus respuestas, adivinaré el número que elegiste.</p>
+        <button id="continueButton">Continuar al juego</button> <!-- Botón para continuar al juego -->
+    </div>
+
+    <!-- Zona para mostrar cartas y preguntas -->
+    <div id="question" style="display:none;"></div>
+    <div id="numberCheck" style="display:none;"></div> <!-- Para verificar si el número está en la carta -->
+    <button id="yesButton" style="display:none;">Sí</button>
+    <button id="noButton" style="display:none;">No</button>
+    
+    <!-- Resultado del juego y botón de reinicio -->
+    <div id="result" style="margin-top: 20px; font-size: 24px;"></div>
+    <button id="resetButton">Reiniciar Juego</button> <!-- Botón de reinicio centrado -->
+
+    <script>
+        // Lógica del juego
+        const cards = [
+            [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31],
+            [2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31],
+            [4, 5, 6, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28, 29, 30, 31],
+            [8, 9, 10, 11, 12, 13, 14, 15, 24, 25, 26, 27, 28, 29, 30, 31],
+            [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+        ];
+
+        let currentCard = 0;
+        let guessedNumber = 0;
+
+        // Iniciar el juego y ocultar la bienvenida
+        document.getElementById('startButton').addEventListener('click', () => {
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById('instructions').style.display = 'block'; // Mostrar instrucciones
+        });
+
+        // Continuar al juego
+        document.getElementById('continueButton').addEventListener('click', () => {
+            document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones
+            showCard(); // Mostrar la primera carta
+        });
+
+        // Función para mezclar (aleatorizar) una lista
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Función para mostrar la carta actual
+        function showCard() {
+            const questionDiv = document.getElementById('question');
+            if (currentCard < cards.length) {
+                const shuffledNumbers = shuffle([...cards[currentCard]]); // Copiar y mezclar la carta actual
+                const cardTable = document.createElement('table');
+                cardTable.id = 'cardTable';
+                cardTable.className = `table-${currentCard}`; // Asignar clase de color
+
+                for (let i = 0; i < 4; i++) {
+                    const row = document.createElement('tr');
+                    for (let j = 0; j < 4; j++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'card';
+                        cell.textContent = shuffledNumbers[i * 4 + j] || ''; // Si no hay número, dejar en blanco
+                        row.appendChild(cell);
+                    }
+                    cardTable.appendChild(row);
+                }
+
+                questionDiv.innerHTML = ''; // Limpiar el contenido anterior
+                questionDiv.appendChild(cardTable); // Mostrar la tabla
+                questionDiv.style.display = 'block'; // Asegurarse de que la tabla sea visible
+
+                // Preguntar si el número está dentro de la carta
+                document.getElementById('numberCheck').innerHTML = `¿Está tu número en esta carta?`;
+                document.getElementById('numberCheck').style.display = 'block';
+                document.getElementById('yesButton').style.display = 'inline'; // Mostrar botón de "Sí"
+                document.getElementById('noButton').style.display = 'inline'; // Mostrar botón de "No"
+            } else {
+                // Mostrar el número adivinado y el botón de reinicio
+                document.getElementById('result').innerHTML = `Pensaste en el número: <strong>${guessedNumber}</strong>`;
+                document.getElementById('resetButton').style.display = 'block'; // Mostrar botón de reinicio
+                document.getElementById('numberCheck').style.display = 'none'; // Ocultar mensaje de número
+                document.getElementById('question').style.display = 'none'; // Ocultar cartas
+                document.getElementById('yesButton').style.display = 'none'; // Ocultar botón de "Sí"
+                document.getElementById('noButton').style.display = 'none'; // Ocultar botón de "No"
+            }
+        }
+
+        // Manejar respuesta "Sí"
+        document.getElementById('yesButton').addEventListener('click', () => {
+            guessedNumber += Math.pow(2, currentCard); // Sumar el valor de la carta
+            currentCard++; // Pasar a la siguiente carta
+            showCard(); // Mostrar la siguiente carta
+        });
+
+        // Manejar respuesta "No"
+        document.getElementById('noButton').addEventListener('click', () => {
+            currentCard++; // Pasar a la siguiente carta
+            showCard(); // Mostrar la siguiente carta
+        });
+
+        // Reiniciar el juego
+        document.getElementById('resetButton').addEventListener('click', () => {
+            currentCard = 0;
+            guessedNumber = 0;
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('resetButton').style.display = 'none';
+            document.getElementById('welcome').style.display = 'block'; // Mostrar bienvenida nuevamente
+            document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones
+            document.getElementById('question').style.display = 'none'; // Ocultar cartas
+            document.getElementById('numberCheck').style.display = 'none'; // Ocultar mensaje de número
+        });
+    </script>
+</body>
+</html>
